@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Matches Digit Analyzer</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#182230}
+  .app{max-width:760px;margin:auto;padding:18px}
+  h1{margin:0 0 6px;font-size:25px}
+  .sub{color:#657184;margin:0 0 18px}
+  .card{background:white;border:1px solid #dce3ec;border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 3px 14px #0000000b}
+  textarea{width:100%;min-height:100px;padding:12px;border:1px solid #cbd5e1;border-radius:12px;font-size:16px;resize:vertical}
+  button{border:0;border-radius:11px;padding:12px 15px;font-weight:700;font-size:15px;cursor:pointer}
+  .primary{background:#1769e0;color:white}.secondary{background:#e8eef7;color:#1e293b}
+  .row{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .digit{border:1px solid #d9e1ea;border-radius:12px;padding:10px;text-align:center}
+  .digit strong{display:block;font-size:22px}
+  .bar{height:7px;background:#e8edf3;border-radius:9px;overflow:hidden;margin-top:7px}
+  .fill{height:100%;background:#1769e0}
+  .signal{font-size:20px;font-weight:800;margin:4px 0}
+  .muted{color:#687589;font-size:13px}
+  .warn{background:#fff7df;border-color:#f0d27a}
+  .small{font-size:12px;line-height:1.5}
+  @media(max-width:520px){.grid{grid-template-columns:repeat(5,1fr)}.app{padding:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Matches Digit Analyzer</h1>
+  <p class="sub">A simple manual-analysis tool for Deriv digit data.</p>
+
+  <div class="card">
+    <b>1. Enter recent digits</b>
+    <p class="muted">Paste digits only, for example: 381904275610...</p>
+    <textarea id="digits" placeholder="Enter recent digits here"></textarea>
+    <div class="row">
+      <button class="primary" onclick="analyze()">Analyze</button>
+      <button class="secondary" onclick="clearAll()">Clear</button>
+      <button class="secondary" onclick="demo()">Use demo data</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <b>2. Frequency</b>
+    <div id="frequency" class="grid" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <b>3. Recent pattern</b>
+    <div id="pattern" class="muted" style="margin-top:8px">Enter digits and tap Analyze.</div>
+  </div>
+
+  <div class="card">
+    <b>Matches focus</b>
+    <div id="signal" class="signal">No analysis yet</div>
+    <div id="reason" class="muted"></div>
+  </div>
+
+  <div class="card warn">
+    <b>Important</b>
+    <p class="small">
+      This tool describes recent data; it cannot know or guarantee the next digit.
+      A “match” outcome is uncertain. Use demo trading first and treat every signal
+      as analysis, not a guaranteed prediction. Never give this page your Deriv
+      password or account login.
+    </p>
+  </div>
+</div>
+
+<script>
+function clean(s){
+  return (s||"").replace(/[^0-9]/g,"");
+}
+function analyze(){
+  const s=clean(document.getElementById("digits").value);
+  const f=Array(10).fill(0);
+  for(const c of s) f[Number(c)]++;
+  const total=s.length;
+  const box=document.getElementById("frequency");
+  box.innerHTML="";
+  for(let d=0;d<10;d++){
+    const pct=total?f[d]/total*100:0;
+    box.innerHTML += `<div class="digit"><strong>${d}</strong>${f[d]}<div class="muted">${pct.toFixed(1)}%</div><div class="bar"><div class="fill" style="width:${pct}%"></div></div></div>`;
+  }
+  if(!total){
+    document.getElementById("pattern").textContent="No digits entered.";
+    document.getElementById("signal").textContent="No analysis yet";
+    document.getElementById("reason").textContent="";
+    return;
+  }
+  const recent=s.slice(-20);
+  document.getElementById("pattern").innerHTML =
+    `Last ${recent.length} digits: <b>${recent.split("").join(" ")}</b><br>
+     Total digits analyzed: <b>${total}</b>`;
+
+  const ranked=[...Array(10).keys()].sort((a,b)=>f[b]-f[a]);
+  const hot=ranked[0], cold=ranked[ranked.length-1];
+  document.getElementById("signal").textContent =
+    `Most frequent: ${hot}  •  Least frequent: ${cold}`;
+  document.getElementById("reason").textContent =
+    `Recent frequency only. This is not a prediction that ${hot} will be the next digit.`;
+}
+function clearAll(){
+  document.getElementById("digits").value="";
+  analyze();
+}
+function demo(){
+  document.getElementById("digits").value="3819042756102837465190273816509274162039";
+  analyze();
+}
+</script>
+</body>
+</html>
